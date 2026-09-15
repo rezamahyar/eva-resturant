@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>EVA Kitchen</title>
+  <style>
+    :root {
+      --bg-0: #0a0d13; --bg-1: #12151f; --glass: rgba(255,255,255,0.055);
+      --glass-strong: rgba(255,255,255,0.09); --border: rgba(255,255,255,0.12);
+      --accent: #d4a017; --accent2: #8a5cf6;
+      --text: #eef1f6; --muted: #9aa4b2;
+      --ok: #39d98a; --warn: #ff9f43; --danger: #ff5c5c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Vazirmatn", "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif;
+      color: var(--text); min-height: 100vh; overflow-x: hidden;
+      background:
+        radial-gradient(900px 500px at 15% -10%, rgba(212,160,23,0.16), transparent 60%),
+        radial-gradient(900px 600px at 110% 10%, rgba(138,92,246,0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      background-attachment: fixed;
+    }
+    header {
+      background: rgba(18,21,31,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50; gap: 10px; flex-wrap: wrap;
+    }
+    header h1 {
+      font-size: 22px; font-weight: 800; letter-spacing: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    header .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .hdr-right { display: flex; align-items: center; gap: 10px; }
+    .lang-sel, .snd-btn {
+      background: var(--glass); border: 1px solid var(--border); color: var(--text);
+      border-radius: 10px; padding: 8px 12px; font-size: 12px; backdrop-filter: blur(6px); cursor: pointer;
+    }
+    .snd-btn.muted { color: var(--muted); }
+    .clock { font-size: 13px; color: var(--muted); font-weight: 700; min-width: 64px; text-align: center; }
+    .toast {
+      position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-8px);
+      background: rgba(20,24,34,0.92); border: 1px solid var(--accent); color: var(--text);
+      backdrop-filter: blur(14px);
+      padding: 12px 20px; border-radius: 14px; z-index: 100; opacity: 0; pointer-events: none;
+      font-size: 13px; max-width: 92%; text-align: center; transition: opacity .2s ease, transform .2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .board {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+      padding: 16px; align-items: start;
+    }
+    @media (max-width: 900px) { .board { grid-template-columns: 1fr; } }
+    .col { min-width: 0; }
+    .col-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 14px; margin-bottom: 10px;
+      background: var(--glass); border: 1px solid var(--border);
+    }
+    .col-head .name { font-weight: 800; font-size: 13px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .col-head .count {
+      background: rgba(255,255,255,0.08); border-radius: 20px; padding: 2px 10px; font-size: 12px; font-weight: 800;
+    }
+    .col-pending .col-head { border-color: rgba(255,92,92,0.35); }
+    .col-pending .col-head .name { color: var(--danger); }
+    .col-preparing .col-head { border-color: rgba(255,159,67,0.35); }
+    .col-preparing .col-head .name { color: var(--warn); }
+    .col-ready .col-head { border-color: rgba(57,217,138,0.35); }
+    .col-ready .col-head .name { color: var(--ok); }
+    .empty-col { color: var(--muted); font-size: 12px; text-align: center; padding: 24px 10px; opacity: 0.7; }
+    .order-card {
+      background: rgba(0,0,0,0.26); border: 1px solid var(--border); border-radius: 18px;
+      padding: 14px; margin-bottom: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      border-left: 4px solid var(--border);
+    }
+    .order-card.age-ok { border-left-color: var(--ok); }
+    .order-card.age-mid { border-left-color: var(--warn); }
+    .order-card.age-late { border-left-color: var(--danger); }
+    .order-card.pri-rush { box-shadow: 0 0 0 1px rgba(255,92,92,0.4), 0 8px 24px rgba(0,0,0,0.25); }
+    .order-card.pri-vip { box-shadow: 0 0 0 1px rgba(192,132,252,0.5), 0 8px 24px rgba(0,0,0,0.25); }
+    .order-card .head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+    .order-card .table { font-size: 17px; font-weight: 800; }
+    .order-card .pri-tag { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 10px; margin-inline-start: 6px; }
+    .pri-tag.rush { color: var(--danger); background: rgba(255,92,92,0.14); }
+    .pri-tag.vip { color: #c084fc; background: rgba(192,132,252,0.14); }
+    .order-card .age { font-size: 12px; color: var(--muted); font-weight: 700; text-align: end; }
+    .order-card .type-badge {
+      display: inline-block; font-size: 10px; font-weight: 700; color: var(--accent2);
+      background: rgba(138,92,246,0.14); border-radius: 8px; padding: 2px 8px; margin-bottom: 8px;
+    }
+    .item-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); }
+    .item-row:last-child { border-bottom: none; }
+    .item-row .qty { color: var(--accent); font-weight: 800; margin-inline-end: 6px; }
+    .item-row .size { color: var(--muted); font-size: 11px; }
+    .note-box {
+      margin-top: 8px; font-size: 12px; color: var(--warn); background: rgba(255,159,67,0.1);
+      border: 1px solid rgba(255,159,67,0.25); border-radius: 10px; padding: 8px 10px;
+    }
+    .est-row { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--muted); font-weight: 700; }
+    .card-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .card-actions button {
+      flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 800; font-size: 13.5px; cursor: pointer;
+      transition: transform .08s ease;
+    }
+    .card-actions button:active { transform: scale(0.96); }
+    .btn-start { background: linear-gradient(90deg, var(--warn), #ffb066); color: #241300; }
+    .btn-ready { background: linear-gradient(90deg, var(--ok), #5cf0a8); color: #062412; }
+    .btn-ready-only { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0a0c10; }
+    .ready-mark { text-align: center; font-size: 12px; font-weight: 800; color: var(--ok); padding: 8px 0 2px; }
+    .gate {
+      position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+      background: rgba(6,8,12,0.86); backdrop-filter: blur(10px); padding: 20px;
+    }
+    .gate .box {
+      width: 100%; max-width: 360px; background: var(--glass-strong); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .gate h2 {
+      font-size: 18px; font-weight: 800; margin-bottom: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .gate p { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+    .gate input {
+      width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); padding: 12px 13px; font-size: 15px; outline: none;
+    }
+    .gate .btn {
+      width: 100%; margin-top: 12px; padding: 13px 14px; border-radius: 14px; border: none; font-weight: 800; cursor: pointer;
+      background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0a0c10;
+    }
+    .gate .err { color: var(--danger); font-size: 12px; margin-top: 8px; min-height: 16px; }
+    .hidden { display: none !important; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="gate hidden" id="gate">
+    <div class="box">
+      <h2 id="gateTitle">—</h2>
+      <p id="gateHint">—</p>
+      <input type="password" id="gateKey" autocomplete="off" />
+      <button class="btn" id="gateSubmit">—</button>
+      <div class="err" id="gateErr"></div>
+    </div>
+  </div>
+  <header>
+    <div>
+      <h1>EVA</h1>
+      <div class="sub" id="hdrSub">Kitchen</div>
+    </div>
+    <div class="hdr-right">
+      <div class="clock" id="clock">--:--</div>
+      <button class="snd-btn" id="sndBtn">🔔</button>
+      <select class="lang-sel" id="langSel">
+        <option value="fa">فارسی</option>
+        <option value="ps">پښتو</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </header>
+  <div class="toast" id="toast"></div>
+  <div class="board">
+    <div class="col col-pending">
+      <div class="col-head"><span class="name" id="hPending">—</span><span class="count" id="cPending">0</span></div>
+      <div id="colPending"></div>
+    </div>
+    <div class="col col-preparing">
+      <div class="col-head"><span class="name" id="hPreparing">—</span><span class="count" id="cPreparing">0</span></div>
+      <div id="colPreparing"></div>
+    </div>
+    <div class="col col-ready">
+      <div class="col-head"><span class="name" id="hReady">—</span><span class="count" id="cReady">0</span></div>
+      <div id="colReady"></div>
+    </div>
+  </div>
+
+<script>
+const I18N = {
+  en: { sub:"Kitchen display", pending:"Pending", preparing:"Preparing", ready:"Ready — pick up", empty:"Nothing here", table:"Table ", dine:"Dine-in", take:"Takeaway", start:"▶ Start cooking", markReady:"✓ Mark ready", readyMark:"Ready — waiting for pickup", est:"Est.", ago:"ago", justNow:"just now", min:"m", gateTitle:"Kitchen access key", gateHint:"Ask the manager for this restaurant's access key. It's only needed once on this device.", gateSubmit:"Continue", gateWrong:"Wrong key — try again", gateChecking:"Checking…", noConn:"Cannot reach server", actionFailed:"Action failed", rush:"RUSH", vip:"VIP", note:"Note" },
+  fa: { sub:"تخته آشپزخانه", pending:"در انتظار", preparing:"در حال آماده‌سازی", ready:"آماده — تحویل بگیرید", empty:"چیزی نیست", table:"میز ", dine:"سالن", take:"بیرون‌بر", start:"▶ شروع پخت", markReady:"✓ آماده شد", readyMark:"آماده — منتظر تحویل", est:"تخمین", ago:"پیش", justNow:"همین الان", min:"د", gateTitle:"کلید دسترسی آشپزخانه", gateHint:"این کلید را از مدیر رستوران بگیرید. فقط یک‌بار روی این دستگاه لازم است.", gateSubmit:"ادامه", gateWrong:"کلید اشتباه است — دوباره تلاش کنید", gateChecking:"در حال بررسی…", noConn:"ارتباط با سرور برقرار نشد", actionFailed:"عملیات ناموفق بود", rush:"فوری", vip:"VIP", note:"یادداشت" },
+  ps: { sub:"د پخلنځي تخته", pending:"په تمه", preparing:"په چمتو کولو کې", ready:"چمتو — راولئ", empty:"هېڅ نشته", table:"میز ", dine:"په رستورانت کې", take:"بهر وړل", start:"▶ پخول پیل کړئ", markReady:"✓ چمتو شو", readyMark:"چمتو — د اخیستلو په تمه", est:"اټکل", ago:"مخکې", justNow:"همدا اوس", min:"د", gateTitle:"د پخلنځي د لاسرسي کیلي", gateHint:"دا کیلي د رستورانت له مدیر واخلئ. یوازې یو‌ځل په دې وسیله اړینه ده.", gateSubmit:"دوام", gateWrong:"کیلي غلطه ده — بیا هڅه وکړئ", gateChecking:"چک کیږي…", noConn:"سرور سره اړیکه ونه شوه", actionFailed:"کړنه ناکامه شوه", rush:"بیړنی", vip:"VIP", note:"یادښت" }
+};
+let lang = localStorage.getItem("eva_lang") || "fa";
+let soundOn = localStorage.getItem("eva_kitchen_sound") !== "0";
+let orders = [];
+let knownPendingIds = new Set();
+function t(k) { return (I18N[lang] || I18N.en)[k] || k; }
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+// ── staff access key: same one used by the waiter tablet ──
+let apiKey = localStorage.getItem("eva_api_key") || "";
+function authHeaders(json) {
+  const h = { "X-Api-Key": apiKey };
+  if (json) h["Content-Type"] = "application/json";
+  return h;
+}
+function openGate(errMsg) {
+  document.getElementById("gate").classList.remove("hidden");
+  document.getElementById("gateErr").textContent = errMsg || "";
+  document.getElementById("gateKey").focus();
+}
+function closeGate() { document.getElementById("gate").classList.add("hidden"); }
+async function trySavedKey() {
+  if (!apiKey) { openGate(); return; }
+  try {
+    const res = await fetch("/api/verify_key", { headers: authHeaders() });
+    if (res.status === 401) { apiKey = ""; localStorage.removeItem("eva_api_key"); openGate(); return; }
+    closeGate();
+    startApp();
+  } catch (e) { openGate(t("noConn")); }
+}
+document.getElementById("gateSubmit").onclick = async () => {
+  const val = document.getElementById("gateKey").value.trim();
+  if (!val) return;
+  document.getElementById("gateErr").textContent = t("gateChecking");
+  try {
+    const res = await fetch("/api/verify_key", { headers: { "X-Api-Key": val } });
+    if (!res.ok) { document.getElementById("gateErr").textContent = t("gateWrong"); return; }
+    apiKey = val;
+    localStorage.setItem("eva_api_key", apiKey);
+    closeGate();
+    startApp();
+  } catch (e) { document.getElementById("gateErr").textContent = t("noConn"); }
+};
+document.getElementById("gateKey").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter") document.getElementById("gateSubmit").click();
+});
+
+// ── beep alert for new pending tickets (simple WebAudio tone, no asset file needed) ──
+function beep() {
+  if (!soundOn) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = 880;
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + 0.4);
+  } catch (e) { /* best-effort only */ }
+}
+function updateSndBtn() {
+  const b = document.getElementById("sndBtn");
+  b.textContent = soundOn ? "🔔" : "🔕";
+  b.classList.toggle("muted", !soundOn);
+}
+document.getElementById("sndBtn").onclick = () => {
+  soundOn = !soundOn;
+  localStorage.setItem("eva_kitchen_sound", soundOn ? "1" : "0");
+  updateSndBtn();
+};
+
+// ── live updates ──
+function subscribeLive() {
+  try {
+    const es = new EventSource("/api/stream?key=" + encodeURIComponent(apiKey));
+    es.onmessage = () => loadOrders();
+    es.onerror = () => { /* browser auto-reconnects EventSource on its own */ };
+  } catch (e) { /* SSE unsupported */ }
+}
+function startClock() {
+  const el = document.getElementById("clock");
+  const tick = () => { el.textContent = new Date().toLocaleTimeString(lang === "en" ? "en-US" : "fa-IR", { hour: "2-digit", minute: "2-digit" }); };
+  tick(); setInterval(tick, 1000 * 15);
+}
+function startApp() {
+  applyLang();
+  updateSndBtn();
+  startClock();
+  loadOrders();
+  subscribeLive();
+  setInterval(loadOrders, 15000); // fallback poll in case SSE drops silently
+  setInterval(renderBoard, 30000); // keep age colors/labels fresh even with no new events
+}
+
+// ── central error reporting ──
+window.addEventListener("error", (ev) => {
+  try {
+    fetch("/api/client_error", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "kitchen", message: ev.message, stack: ev.error && ev.error.stack, url: location.href })
+    });
+  } catch (e) {}
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  try {
+    fetch("/api/client_error", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "kitchen", message: String(ev.reason), url: location.href })
+    });
+  } catch (e) {}
+});
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === "en") ? "ltr" : "rtl";
+  document.getElementById("hdrSub").textContent = t("sub");
+  document.getElementById("hPending").textContent = t("pending");
+  document.getElementById("hPreparing").textContent = t("preparing");
+  document.getElementById("hReady").textContent = t("ready");
+  document.getElementById("gateTitle").textContent = t("gateTitle");
+  document.getElementById("gateHint").textContent = t("gateHint");
+  document.getElementById("gateSubmit").textContent = t("gateSubmit");
+  renderBoard();
+}
+document.getElementById("langSel").value = lang;
+document.getElementById("langSel").addEventListener("change", (e) => {
+  lang = e.target.value;
+  localStorage.setItem("eva_lang", lang);
+  applyLang();
+});
+
+function ageMinutes(o) {
+  const created = new Date((o.created_at || "").replace(" ", "T") + (o.created_at && o.created_at.endsWith("Z") ? "" : "Z"));
+  if (isNaN(created.getTime())) return 0;
+  return Math.max(0, Math.round((Date.now() - created.getTime()) / 60000));
+}
+function ageLabel(mins) {
+  if (mins <= 0) return t("justNow");
+  return mins + t("min") + " " + t("ago");
+}
+function ageClass(mins, estMin) {
+  const est = estMin || 15;
+  if (mins >= est) return "age-late";
+  if (mins >= est * 0.6) return "age-mid";
+  return "age-ok";
+}
+
+async function loadOrders() {
+  try {
+    const res = await fetch("/api/orders?status=pending,preparing,ready", { headers: authHeaders() });
+    if (res.status === 401) { apiKey = ""; localStorage.removeItem("eva_api_key"); openGate(t("gateWrong")); return; }
+    if (!res.ok) throw new Error("bad status");
+    let rows = await res.json();
+    rows = rows.filter(o => ["pending", "preparing", "ready"].includes(o.status));
+    const newPending = rows.filter(o => o.status === "pending" && !knownPendingIds.has(o.id));
+    if (newPending.length && knownPendingIds.size) beep(); // skip beep on very first load
+    knownPendingIds = new Set(rows.filter(o => o.status === "pending").map(o => o.id));
+    orders = rows;
+    renderBoard();
+  } catch (e) { toast(t("noConn")); }
+}
+
+function renderBoard() {
+  const cols = { pending: [], preparing: [], ready: [] };
+  orders.forEach(o => { if (cols[o.status]) cols[o.status].push(o); });
+  const order = (a, b) => (b.priority || 0) - (a.priority || 0) || a.id - b.id;
+  Object.keys(cols).forEach(k => cols[k].sort(order));
+
+  document.getElementById("cPending").textContent = cols.pending.length;
+  document.getElementById("cPreparing").textContent = cols.preparing.length;
+  document.getElementById("cReady").textContent = cols.ready.length;
+
+  renderCol("colPending", cols.pending, "pending");
+  renderCol("colPreparing", cols.preparing, "preparing");
+  renderCol("colReady", cols.ready, "ready");
+}
+
+function renderCol(elId, list, status) {
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-col">${t("empty")}</div>`;
+    return;
+  }
+  list.forEach(o => el.appendChild(buildCard(o, status)));
+}
+
+function buildCard(o, status) {
+  const mins = ageMinutes(o);
+  const div = document.createElement("div");
+  const pri = Number(o.priority || 0);
+  div.className = "order-card " + ageClass(mins, o.est_prep_min) + (pri >= 2 ? " pri-vip" : pri >= 1 ? " pri-rush" : "");
+
+  let priTag = "";
+  if (pri >= 2) priTag = `<span class="pri-tag vip">★ ${t("vip")}</span>`;
+  else if (pri >= 1) priTag = `<span class="pri-tag rush">⚡ ${t("rush")}</span>`;
+
+  const otype = (o.order_type === "takeaway") ? t("take") : t("dine");
+  const itemsHtml = (o.items || []).map(it => `
+    <div class="item-row">
+      <span><span class="qty">${it.qty}×</span>${escapeHtml(it.name || "")} <span class="size">(${escapeHtml(it.size || "")})</span></span>
+    </div>
+  `).join("");
+
+  const noteHtml = o.note ? `<div class="note-box">📝 ${escapeHtml(o.note)}</div>` : "";
+
+  let actionsHtml = "";
+  if (status === "pending") {
+    actionsHtml = `<div class="card-actions">
+      <button class="btn-start" data-act="preparing" data-id="${o.id}">${t("start")}</button>
+      <button class="btn-ready-only" data-act="ready" data-id="${o.id}">${t("markReady")}</button>
+    </div>`;
+  } else if (status === "preparing") {
+    actionsHtml = `<div class="card-actions">
+      <button class="btn-ready" data-act="ready" data-id="${o.id}">${t("markReady")}</button>
+    </div>`;
+  } else {
+    actionsHtml = `<div class="ready-mark">✓ ${t("readyMark")}</div>`;
+  }
+
+  div.innerHTML = `
+    <div class="head">
+      <div class="table">${t("table")}${o.table_no}${priTag}</div>
+      <div class="age">${ageLabel(mins)}</div>
+    </div>
+    <div class="type-badge">${otype}</div>
+    ${itemsHtml}
+    ${noteHtml}
+    <div class="est-row"><span>${t("est")}: ~${o.est_prep_min || 15}${t("min")}</span></div>
+    ${actionsHtml}
+  `;
+
+  div.querySelectorAll("button[data-act]").forEach(btn => {
+    btn.addEventListener("click", () => setStatus(btn.dataset.id, btn.dataset.act));
+  });
+  return div;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function setStatus(oid, status) {
+  try {
+    const res = await fetch(`/api/orders/${oid}/status`, {
+      method: "POST", headers: authHeaders(true), body: JSON.stringify({ status })
+    });
+    if (res.status === 401) { apiKey = ""; localStorage.removeItem("eva_api_key"); openGate(t("gateWrong")); return; }
+    if (!res.ok) { toast(t("actionFailed")); return; }
+    loadOrders();
+  } catch (e) { toast(t("noConn")); }
+}
+
+trySavedKey();
+</script>
+</body>
+</html>

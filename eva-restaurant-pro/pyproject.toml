@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eva-restaurant"
+version = "1.0.0"
+description = "Professional Kitchen Display + Waiter Tablet + Accounting system"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.5.0",
+    "Flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "SQLAlchemy>=2.0.0",
+    "Werkzeug>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.1"]
+
+[project.scripts]
+eva-restaurant = "eva_restaurant.__main__:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+exclude = ["templates", "static", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # line length handled by formatter preference

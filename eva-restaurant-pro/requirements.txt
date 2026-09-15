@@ -1,0 +1,5 @@
+PySide6>=6.5.0
+Flask>=3.0.0
+flask-cors>=4.0.0
+SQLAlchemy>=2.0.0
+Werkzeug>=3.0.0

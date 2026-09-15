@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>EVA Waiter</title>
+  <style>
+    :root {
+      --bg-0: #0a0d13; --bg-1: #12151f; --glass: rgba(255,255,255,0.055);
+      --glass-strong: rgba(255,255,255,0.09); --border: rgba(255,255,255,0.12);
+      --accent: #d4a017; --accent2: #8a5cf6;
+      --text: #eef1f6; --muted: #9aa4b2;
+      --ok: #39d98a; --danger: #ff5c5c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      font-family: "Vazirmatn", "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif;
+      color: var(--text); min-height: 100vh; padding-bottom: 104px;
+      background:
+        radial-gradient(900px 500px at 15% -10%, rgba(212,160,23,0.16), transparent 60%),
+        radial-gradient(900px 600px at 110% 10%, rgba(138,92,246,0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      background-attachment: fixed;
+    }
+    header {
+      background: rgba(18,21,31,0.72); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50; gap: 10px;
+    }
+    header h1 {
+      font-size: 21px; font-weight: 800; letter-spacing: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    header .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .lang-sel {
+      background: var(--glass); border: 1px solid var(--border); color: var(--text);
+      border-radius: 10px; padding: 8px 12px; font-size: 12px; backdrop-filter: blur(6px);
+    }
+    .wrap { padding: 16px; max-width: 640px; margin: 0 auto; }
+    .card {
+      background: var(--glass); border: 1px solid var(--border); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 20px; padding: 16px; margin-bottom: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.28);
+    }
+    .card h2 {
+      font-size: 12px; letter-spacing: 0.5px; color: var(--accent);
+      margin-bottom: 12px; font-weight: 800; text-transform: uppercase;
+    }
+    label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+    select, input, textarea {
+      width: 100%; background: rgba(0,0,0,0.28); border: 1px solid var(--border);
+      border-radius: 12px; color: var(--text); padding: 12px 13px; font-size: 15px; outline: none;
+      transition: border-color .15s ease;
+    }
+    select:focus, input:focus, textarea:focus { border-color: var(--accent); }
+    .row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .row > * { flex: 1; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--glass-strong); border: 1px solid var(--border); color: var(--text);
+      border-radius: 14px; padding: 13px 14px; font-weight: 700; font-size: 14px;
+      cursor: pointer; width: 100%; transition: transform .08s ease, background .15s ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: #0a0c10; border: none; box-shadow: 0 6px 20px rgba(212,160,23,0.25);
+    }
+    .btn-ghost { background: transparent; }
+    .food-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 9px;
+      max-height: 280px; overflow-y: auto; margin-bottom: 8px; padding-top: 2px;
+    }
+    .food-item {
+      background: rgba(0,0,0,0.24); border: 1px solid var(--border); border-radius: 14px;
+      padding: 10px; cursor: pointer; transition: border-color .12s ease, background .12s ease, transform .08s;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .food-item:active { transform: scale(0.97); }
+    .food-item.selected { border-color: var(--accent); background: rgba(212,160,23,0.10); box-shadow: 0 0 0 1px var(--accent); }
+    .food-item .thumb {
+      width: 100%; height: 56px; object-fit: cover; border-radius: 10px;
+      background: rgba(255,255,255,0.04); display: block;
+    }
+    .food-item .name { font-weight: 700; font-size: 13px; }
+    .food-item .price { color: var(--muted); font-size: 11px; }
+    .food-item .cat { color: var(--accent2); font-size: 10px; font-weight: 600; }
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+    .cat-chips button {
+      padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2); color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .cat-chips button.active { border-color: var(--accent); color: var(--accent); background: rgba(212,160,23,0.12); }
+    .pri-row { display: flex; gap: 8px; margin-bottom: 4px; }
+    .pri-row button {
+      flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(0,0,0,0.24); color: var(--muted); font-weight: 700; cursor: pointer; font-size: 12px;
+    }
+    .pri-row button.active { border-color: var(--danger); color: var(--danger); background: rgba(255,92,92,0.10); }
+    .pri-row button.active.vip { border-color: #c084fc; color: #c084fc; background: rgba(192,132,252,0.12); }
+    .cart-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); gap: 8px;
+    }
+    .cart-item:last-child { border-bottom: none; }
+    .cart-item .title { font-weight: 700; font-size: 13px; }
+    .cart-item .meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    .cart-item .line-total { color: var(--accent); font-weight: 800; }
+    .cart-item button {
+      background: rgba(255,92,92,0.12); border: 1px solid rgba(255,92,92,0.3); border-radius: 8px;
+      color: var(--danger); font-size: 16px; cursor: pointer; width: 30px; height: 30px;
+    }
+    .total-bar {
+      display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px;
+      padding-top: 12px; border-top: 1px solid var(--border);
+      font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase;
+    }
+    .total-bar span:last-child { color: var(--accent); font-size: 22px; font-weight: 800; }
+    .footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(18,21,31,0.78); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid var(--border);
+      padding: 14px; display: flex; gap: 10px; z-index: 50;
+    }
+    .toast {
+      position: fixed; top: 72px; left: 50%; transform: translateX(-50%) translateY(-8px);
+      background: rgba(20,24,34,0.92); border: 1px solid var(--accent); color: var(--text);
+      backdrop-filter: blur(14px);
+      padding: 12px 20px; border-radius: 14px; z-index: 100; opacity: 0; pointer-events: none;
+      font-size: 13px; max-width: 92%; text-align: center; transition: opacity .2s ease, transform .2s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .tabs button {
+      flex: 1; padding: 12px; border-radius: 14px; border: 1px solid var(--border);
+      background: var(--glass); color: var(--muted); font-weight: 700; cursor: pointer;
+    }
+    .tabs button.active {
+      background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #0a0c10; border: none;
+    }
+    .hidden { display: none !important; }
+    .order-card {
+      background: rgba(0,0,0,0.22); border: 1px solid var(--border); border-radius: 16px;
+      padding: 14px; margin-bottom: 10px;
+    }
+    .order-card .head { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+    .order-card .head strong { font-size: 15px; }
+    .badge {
+      font-size: 11px; padding: 4px 10px; border-radius: 20px;
+      background: rgba(212,160,23,0.14); color: var(--accent); font-weight: 700;
+      border: 1px solid rgba(212,160,23,0.25);
+    }
+    .type-row { display: flex; gap: 8px; margin-bottom: 4px; }
+    .type-row button {
+      flex: 1; padding: 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(0,0,0,0.24); color: var(--muted); font-weight: 700; cursor: pointer;
+    }
+    .type-row button.active { border-color: var(--accent); color: var(--accent); background: rgba(212,160,23,0.10); }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 6px; }
+    .gate {
+      position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+      background: rgba(6,8,12,0.86); backdrop-filter: blur(10px); padding: 20px;
+    }
+    .gate .box {
+      width: 100%; max-width: 360px; background: var(--glass-strong); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .gate h2 {
+      font-size: 18px; font-weight: 800; margin-bottom: 6px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .gate p { color: var(--muted); font-size: 12px; margin-bottom: 14px; }
+    .gate .err { color: var(--danger); font-size: 12px; margin-top: 8px; min-height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="gate hidden" id="gate">
+    <div class="box">
+      <h2 id="gateTitle">—</h2>
+      <p id="gateHint">—</p>
+      <input type="password" id="gateKey" autocomplete="off" />
+      <button class="btn btn-primary" id="gateSubmit" style="margin-top:12px;">—</button>
+      <div class="err" id="gateErr"></div>
+    </div>
+  </div>
+  <header>
+    <div>
+      <h1>EVA</h1>
+      <div class="sub" id="hdrSub">Waiter</div>
+    </div>
+    <select class="lang-sel" id="langSel">
+      <option value="fa">فارسی</option>
+      <option value="ps">پښتو</option>
+      <option value="en">English</option>
+    </select>
+  </header>
+  <div class="toast" id="toast"></div>
+  <div class="wrap">
+    <div class="tabs">
+      <button class="active" id="tabNew">—</button>
+      <button id="tabList">—</button>
+    </div>
+    <div id="panelNew">
+      <div class="card">
+        <h2 id="hTable">—</h2>
+        <select id="tableNo"></select>
+        <div id="occupiedWarn" class="hidden" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,159,67,0.12);border:1px solid rgba(255,159,67,0.35);color:#ff9f43;font-size:12px;font-weight:700;">
+          <div id="occupiedWarnText">—</div>
+          <button class="btn" id="btnGoEditOccupied" style="margin-top:8px;width:auto;padding:8px 14px;">—</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 id="hType">—</h2>
+        <div class="type-row">
+          <button class="active" id="typeDine">—</button>
+          <button id="typeTake">—</button>
+        </div>
+        <h2 id="hPri" style="margin-top:12px;">—</h2>
+        <div class="pri-row">
+          <button class="active" id="priNormal">—</button>
+          <button id="priRush">⚡ —</button>
+          <button id="priVip" class="vip">★ —</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 id="hFood">—</h2>
+        <input type="search" id="foodSearch" />
+        <div class="cat-chips" id="catChips"></div>
+        <div class="food-grid" id="foodGrid" style="margin-top:10px;"></div>
+        <div class="row">
+          <div><label id="lblSize">—</label>
+            <select id="size">
+              <option value="small">S</option>
+              <option value="medium" selected>M</option>
+              <option value="large">L</option>
+            </select>
+          </div>
+          <div><label id="lblQty">—</label><input type="number" id="qty" min="1" value="1" /></div>
+        </div>
+        <button class="btn btn-primary" id="btnAddFood" style="margin-top:10px;">—</button>
+      </div>
+      <div class="card">
+        <h2 id="hCart">—</h2>
+        <div id="cart"></div>
+        <div class="total-bar"><span id="lblTotal">—</span> <span id="grandTotal">0</span></div>
+        <label id="lblNote" style="margin-top:12px;">—</label>
+        <textarea id="note" rows="2"></textarea>
+        <label id="lblWaiter" style="margin-top:10px;">—</label>
+        <input type="text" id="waiterName" />
+      </div>
+    </div>
+    <div id="panelList" class="hidden">
+      <div class="card">
+        <h2 id="hFilter">—</h2>
+        <select id="filterTable"></select>
+        <button class="btn" id="btnRefreshList" style="margin-top:10px;">—</button>
+      </div>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+  <div class="footer" id="footerNew">
+    <button class="btn btn-ghost" id="btnClear">—</button>
+    <button class="btn btn-primary" id="btnSubmit">—</button>
+  </div>
+<script>
+const I18N = {
+  en: { sub:"Waiter · Orders", newOrder:"New order", list:"Open tables", table:"1. Table number", type:"2. Order type", dine:"Dine-in", take:"Takeaway", food:"3. Choose food", search:"Search food…", size:"Size", qty:"Qty", add:"Add to order", cart:"4. Order preview", total:"Total", note:"Kitchen note", waiter:"Waiter name (optional)", clear:"Clear", submit:"Send to kitchen", saveEdit:"Save edit", filter:"Filter table", refresh:"Refresh", allTables:"All tables", emptyCart:"No items yet.", selectFood:"Select a food first", cartEmpty:"Cart is empty", sent:"Sent to kitchen ✓", edited:"Order updated", noConn:"Cannot reach server", noOrders:"No open orders", edit:"Edit", notEditable:"This order cannot be edited", editing:"Editing table ", added:" added", small:"Small", medium:"Medium", large:"Large", tableN:"Table ", gateTitle:"Staff access key", gateHint:"Ask the manager for this restaurant's access key. It's only needed once on this device.", gateSubmit:"Continue", gateWrong:"Wrong key — try again", gateChecking:"Checking…", pri:"Priority", normal:"Normal", rush:"Rush", vip:"VIP", allCat:"All", cancel:"Cancel", statusPending:"Pending", statusPreparing:"Preparing", statusReady:"Ready — pick up!", statusDelivered:"Delivered", statusPaid:"Paid", statusCancelled:"Cancelled", deliverBtn:"✓ Delivered", cancelBtn:"Cancel order", cancelOrderConfirm:"Cancel this order?", delivered:"Order marked delivered", cancelled:"Order cancelled", actionFailed:"Action failed", occupiedText:"Table {n} already has an open order. Add items by editing it instead of starting a new one.", goEditOccupied:"Edit that order", tableTaken:"That table already has an open order — opening it for editing instead." },
+  fa: { sub:"گارسون · ثبت سفارش", newOrder:"سفارش جدید", list:"لیست میزها", table:"۱. شماره میز", type:"۲. نوع سفارش", dine:"سالن", take:"بیرون‌بر", food:"۳. انتخاب غذا", search:"جستجوی غذا…", size:"اندازه", qty:"تعداد", add:"افزودن به سفارش", cart:"۴. پیش‌نمایش سفارش", total:"جمع کل", note:"یادداشت برای آشپزخانه", waiter:"نام گارسون (اختیاری)", clear:"پاک کردن", submit:"ثبت سفارش", saveEdit:"ذخیره ویرایش", filter:"فیلتر میز", refresh:"بروزرسانی", allTables:"همه میزها", emptyCart:"هنوز غذایی اضافه نشده.", selectFood:"ابتدا یک غذا انتخاب کنید", cartEmpty:"سفارش خالی است", sent:"به آشپزخانه ارسال شد ✓", edited:"سفارش ویرایش شد", noConn:"ارتباط با سرور برقرار نشد", noOrders:"سفارشی نیست", edit:"ویرایش", notEditable:"این سفارش قابل ویرایش نیست", editing:"در حال ویرایش میز ", added:" اضافه شد", small:"کوچک", medium:"متوسط", large:"بزرگ", tableN:"میز ", gateTitle:"کلید دسترسی کارکنان", gateHint:"این کلید را از مدیر رستوران بگیرید. فقط یک‌بار روی این دستگاه لازم است.", gateSubmit:"ادامه", gateWrong:"کلید اشتباه است — دوباره تلاش کنید", gateChecking:"در حال بررسی…", pri:"اولویت", normal:"عادی", rush:"فوری", vip:"VIP", allCat:"همه", cancel:"لغو", statusPending:"در انتظار", statusPreparing:"در حال آماده‌سازی", statusReady:"آماده — تحویل بگیرید!", statusDelivered:"تحویل داده شد", statusPaid:"پرداخت‌شده", statusCancelled:"لغو شده", deliverBtn:"✓ تحویل داده شد", cancelBtn:"لغو سفارش", cancelOrderConfirm:"این سفارش لغو شود؟", delivered:"سفارش تحویل‌شده علامت خورد", cancelled:"سفارش لغو شد", actionFailed:"عملیات ناموفق بود", occupiedText:"میز {n} سفارش بازی دارد. برای افزودن غذا، همان سفارش را ویرایش کنید نه سفارش جدید.", goEditOccupied:"ویرایش همان سفارش", tableTaken:"این میز سفارش بازی دارد — به‌جای آن، برای ویرایش باز شد." },
+  ps: { sub:"ویټر · د سفارش ثبت", newOrder:"نوی سفارش", list:"د میزونو لیست", table:"۱. د میز شمېره", type:"۲. د سفارش ډول", dine:"په رستورانت کې", take:"بهر وړل", food:"۳. خواړه وټاکئ", search:"د خواړو لټون…", size:"اندازه", qty:"شمېر", add:"سفارش ته اضافه", cart:"۴. د سفارش مخکتنه", total:"ټولټال", note:"د پخلنځي یادښت", waiter:"د ویټر نوم (اختیاري)", clear:"پاکول", submit:"پخلنځي ته واستوئ", saveEdit:"سمون خوندي کړئ", filter:"د میز فلټر", refresh:"تازه کول", allTables:"ټول میزونه", emptyCart:"تر اوسه خواړه نه دي اضافه شوي.", selectFood:"لومړی خواړه وټاکئ", cartEmpty:"سفارش خالي دی", sent:"پخلنځي ته ولېږل شو ✓", edited:"سفارش تازه شو", noConn:"سرور سره اړیکه ونه شوه", noOrders:"سفارش نشته", edit:"سمون", notEditable:"دا سفارش نشي سمولای", editing:"د میز سمون ", added:" اضافه شو", small:"وړوکی", medium:"منځنی", large:"لوی", tableN:"میز ", gateTitle:"د کارکوونکو د لاسرسي کیلي", gateHint:"دا کیلي د رستورانت له مدیر واخلئ. یوازې یو‌ځل په دې وسیله اړینه ده.", gateSubmit:"دوام", gateWrong:"کیلي غلطه ده — بیا هڅه وکړئ", gateChecking:"چک کیږي…", pri:"لومړیتوب", normal:"عادي", rush:"بیړنی", vip:"VIP", allCat:"ټول", cancel:"لغوه", statusPending:"په تمه", statusPreparing:"په چمتو کولو کې", statusReady:"چمتو — راولئ!", statusDelivered:"تحویل شوی", statusPaid:"ورکړل شوی", statusCancelled:"لغوه شوی", deliverBtn:"✓ تحویل شوی", cancelBtn:"سفارش لغوه کړئ", cancelOrderConfirm:"دا سفارش لغوه شي؟", delivered:"سفارش تحویل شوی په نښه شو", cancelled:"سفارش لغوه شو", actionFailed:"کړنه ناکامه شوه", occupiedText:"میز {n} دمخه سفارش لري. د نوي سفارش پرځای، هماغه سمون کړئ.", goEditOccupied:"هماغه سفارش سمون کړئ", tableTaken:"دا میز دمخه سفارش لري — پرځای یې د سمون لپاره خلاص شو." }
+};
+let lang = localStorage.getItem("eva_lang") || "fa";
+let foods = [], selectedFoodId = null, cart = [], editingOrderId = null, orderType = "dine_in", orderPriority = 0, activeCat = "";
+let occupiedTables = {}; // { table_no: order_id } — tables with an open (non-final) order
+const sizePriceKey = { small: "price_small", medium: "price_medium", large: "price_large" };
+function t(k) { return (I18N[lang] || I18N.en)[k] || k; }
+function money(n) { return Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 }); }
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2500);
+}
+
+// ── staff access key: asked once, stored on this device, sent on every
+// API call. Without it nobody on the network can read or change orders.
+let apiKey = localStorage.getItem("eva_api_key") || "";
+function authHeaders(json) {
+  const h = { "X-Api-Key": apiKey };
+  if (json) h["Content-Type"] = "application/json";
+  return h;
+}
+function openGate(errMsg) {
+  document.getElementById("gate").classList.remove("hidden");
+  document.getElementById("gateErr").textContent = errMsg || "";
+  document.getElementById("gateKey").focus();
+}
+function closeGate() {
+  document.getElementById("gate").classList.add("hidden");
+}
+async function trySavedKey() {
+  if (!apiKey) { openGate(); return; }
+  try {
+    const res = await fetch("/api/verify_key", { headers: authHeaders() });
+    if (res.status === 401) { apiKey = ""; localStorage.removeItem("eva_api_key"); openGate(); return; }
+    closeGate();
+    startApp();
+  } catch (e) { openGate(t("noConn")); }
+}
+document.getElementById("gateSubmit").onclick = async () => {
+  const val = document.getElementById("gateKey").value.trim();
+  if (!val) return;
+  document.getElementById("gateErr").textContent = t("gateChecking");
+  try {
+    const res = await fetch("/api/verify_key", { headers: { "X-Api-Key": val } });
+    if (!res.ok) { document.getElementById("gateErr").textContent = t("gateWrong"); return; }
+    apiKey = val;
+    localStorage.setItem("eva_api_key", apiKey);
+    closeGate();
+    startApp();
+  } catch (e) { document.getElementById("gateErr").textContent = t("noConn"); }
+};
+document.getElementById("gateKey").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter") document.getElementById("gateSubmit").click();
+});
+
+// ── live updates: one shared stream tells us when anything changed, so
+// the open-tables list refreshes itself instead of the waiter having to
+// tap refresh.
+function subscribeLive() {
+  try {
+    const es = new EventSource("/api/stream?key=" + encodeURIComponent(apiKey));
+    es.onmessage = () => {
+      const listVisible = !document.getElementById("panelList").classList.contains("hidden");
+      if (listVisible) loadOrders();
+      loadOccupiedTables();
+    };
+    es.onerror = () => { /* browser auto-reconnects EventSource on its own */ };
+  } catch (e) { /* SSE unsupported — the manual refresh button still works */ }
+}
+function startApp() {
+  applyLang();
+  loadFoods();
+  renderCart();
+  loadOccupiedTables();
+  subscribeLive();
+}
+
+// ── which tables currently have an open order, so the "new order" screen
+// can warn before the waiter even tries to submit one for an occupied
+// table, and point them at editing the existing order instead. This is a
+// proactive UX hint only — the server enforces the real rule (see
+// btnSubmit) and wins any race between two devices.
+async function loadOccupiedTables() {
+  try {
+    const res = await fetch("/api/accounting/tables", { headers: authHeaders() });
+    if (!res.ok) return;
+    const rows = await res.json();
+    occupiedTables = {};
+    rows.forEach(r => {
+      if (r.orders && r.orders.length) occupiedTables[r.table_no] = r.orders[0].id;
+    });
+    checkOccupied();
+  } catch (e) { /* best-effort; server-side check still protects us */ }
+}
+function checkOccupied() {
+  if (editingOrderId) { document.getElementById("occupiedWarn").classList.add("hidden"); return; }
+  const tno = parseInt(document.getElementById("tableNo").value, 10);
+  const warn = document.getElementById("occupiedWarn");
+  if (tno && occupiedTables[tno]) {
+    document.getElementById("occupiedWarnText").textContent = t("occupiedText").replace("{n}", tno);
+    warn.classList.remove("hidden");
+  } else {
+    warn.classList.add("hidden");
+  }
+}
+document.getElementById("btnGoEditOccupied").onclick = () => {
+  const tno = parseInt(document.getElementById("tableNo").value, 10);
+  const oid = occupiedTables[tno];
+  if (oid) editOrder(oid);
+};
+
+// ── central error reporting: any uncaught JS error is sent to the same
+// error log the desktop app and API use, so nothing is ever silently lost.
+window.addEventListener("error", (ev) => {
+  try {
+    fetch("/api/client_error", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "waiter", message: ev.message, stack: ev.error && ev.error.stack, url: location.href })
+    });
+  } catch (e) { /* best-effort only */ }
+});
+window.addEventListener("unhandledrejection", (ev) => {
+  try {
+    fetch("/api/client_error", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: "waiter", message: String(ev.reason), url: location.href })
+    });
+  } catch (e) {}
+});
+
+function sizeLabel(s) { return t(s) || s; }
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === "en") ? "ltr" : "rtl";
+  document.getElementById("hdrSub").textContent = t("sub");
+  document.getElementById("tabNew").textContent = t("newOrder");
+  document.getElementById("tabList").textContent = t("list");
+  document.getElementById("hTable").textContent = t("table");
+  document.getElementById("hType").textContent = t("type");
+  document.getElementById("typeDine").textContent = t("dine");
+  document.getElementById("typeTake").textContent = t("take");
+  document.getElementById("hPri").textContent = t("pri");
+  document.getElementById("priNormal").textContent = t("normal");
+  document.getElementById("priRush").textContent = "⚡ " + t("rush");
+  document.getElementById("priVip").textContent = "★ " + t("vip");
+  document.getElementById("hFood").textContent = t("food");
+  document.getElementById("foodSearch").placeholder = t("search");
+  document.getElementById("lblSize").textContent = t("size");
+  document.getElementById("lblQty").textContent = t("qty");
+  document.getElementById("btnAddFood").textContent = t("add");
+  document.getElementById("hCart").textContent = t("cart");
+  document.getElementById("lblTotal").textContent = t("total");
+  document.getElementById("lblNote").textContent = t("note");
+  document.getElementById("lblWaiter").textContent = t("waiter");
+  document.getElementById("btnClear").textContent = t("clear");
+  document.getElementById("btnSubmit").textContent = editingOrderId ? t("saveEdit") : t("submit");
+  document.getElementById("hFilter").textContent = t("filter");
+  document.getElementById("btnRefreshList").textContent = t("refresh");
+  const sizeSel = document.getElementById("size");
+  sizeSel.options[0].text = t("small");
+  sizeSel.options[1].text = t("medium");
+  sizeSel.options[2].text = t("large");
+  document.getElementById("gateTitle").textContent = t("gateTitle");
+  document.getElementById("gateHint").textContent = t("gateHint");
+  document.getElementById("gateSubmit").textContent = t("gateSubmit");
+  document.getElementById("btnGoEditOccupied").textContent = t("goEditOccupied");
+  fillTables(); renderFoods(); renderCart(); checkOccupied();
+}
+function fillTables() {
+  const sel = document.getElementById("tableNo");
+  const filt = document.getElementById("filterTable");
+  const cur = sel.value, fcur = filt.value;
+  sel.innerHTML = ""; filt.innerHTML = `<option value="">${t("allTables")}</option>`;
+  for (let i = 1; i <= 30; i++) {
+    sel.innerHTML += `<option value="${i}">${t("tableN")}${i}</option>`;
+    filt.innerHTML += `<option value="${i}">${t("tableN")}${i}</option>`;
+  }
+  if (cur) sel.value = cur; if (fcur) filt.value = fcur;
+}
+document.getElementById("tableNo").addEventListener("change", checkOccupied);
+async function loadFoods() {
+  try {
+    const res = await fetch("/api/foods?available=1", { headers: authHeaders() });
+    if (res.status === 401) { apiKey = ""; localStorage.removeItem("eva_api_key"); openGate(t("gateWrong")); return; }
+    foods = await res.json();
+    renderCatChips();
+    renderFoods();
+  } catch (e) { toast(t("noConn")); }
+}
+function renderCatChips() {
+  const cats = [...new Set(foods.map(f => f.category || "Main"))].sort();
+  const box = document.getElementById("catChips");
+  box.innerHTML = "";
+  const all = document.createElement("button");
+  all.textContent = t("allCat");
+  all.className = activeCat === "" ? "active" : "";
+  all.onclick = () => { activeCat = ""; renderCatChips(); renderFoods(); };
+  box.appendChild(all);
+  cats.forEach(c => {
+    const b = document.createElement("button");
+    b.textContent = c;
+    b.className = activeCat === c ? "active" : "";
+    b.onclick = () => { activeCat = c; renderCatChips(); renderFoods(); };
+    box.appendChild(b);
+  });
+}
+function renderFoods() {
+  const q = (document.getElementById("foodSearch").value || "").trim().toLowerCase();
+  const grid = document.getElementById("foodGrid");
+  grid.innerHTML = "";
+  foods.filter(f => {
+    if (activeCat && (f.category || "Main") !== activeCat) return false;
+    if (q && !f.name.toLowerCase().includes(q)) return false;
+    return true;
+  }).forEach(f => {
+    const el = document.createElement("div");
+    el.className = "food-item" + (selectedFoodId === f.id ? " selected" : "");
+    const thumb = f.image
+      ? `<img class="thumb" src="${f.image}" alt="" loading="lazy" onerror="this.style.display='none'"/>`
+      : "";
+    el.innerHTML = `${thumb}<div class="cat">${f.category || ""}</div><div class="name">${f.name}</div><div class="price">S ${money(f.price_small)} · M ${money(f.price_medium)} · L ${money(f.price_large)}</div>`;
+    el.onclick = () => { selectedFoodId = f.id; renderFoods(); };
+    grid.appendChild(el);
+  });
+}
+function renderCart() {
+  const box = document.getElementById("cart");
+  if (!cart.length) {
+    box.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:6px 0;">${t("emptyCart")}</p>`;
+    document.getElementById("grandTotal").textContent = "0";
+    return;
+  }
+  let total = 0;
+  box.innerHTML = cart.map((it, idx) => {
+    const line = it.price * it.qty; total += line;
+    return `<div class="cart-item"><div><div class="title">${it.name}</div><div class="meta">${sizeLabel(it.size)} × ${it.qty} · ${money(it.price)}</div></div><div class="line-total">${money(line)}</div><button onclick="removeItem(${idx})">×</button></div>`;
+  }).join("");
+  document.getElementById("grandTotal").textContent = money(total);
+}
+window.removeItem = function(idx) { cart.splice(idx, 1); renderCart(); };
+document.getElementById("langSel").value = lang;
+document.getElementById("langSel").onchange = () => {
+  lang = document.getElementById("langSel").value;
+  localStorage.setItem("eva_lang", lang);
+  applyLang();
+};
+document.getElementById("typeDine").onclick = () => {
+  orderType = "dine_in";
+  document.getElementById("typeDine").classList.add("active");
+  document.getElementById("typeTake").classList.remove("active");
+};
+document.getElementById("typeTake").onclick = () => {
+  orderType = "takeaway";
+  document.getElementById("typeTake").classList.add("active");
+  document.getElementById("typeDine").classList.remove("active");
+};
+function setPriority(p) {
+  orderPriority = p;
+  document.getElementById("priNormal").classList.toggle("active", p === 0);
+  document.getElementById("priRush").classList.toggle("active", p === 1);
+  document.getElementById("priVip").classList.toggle("active", p === 2);
+}
+document.getElementById("priNormal").onclick = () => setPriority(0);
+document.getElementById("priRush").onclick = () => setPriority(1);
+document.getElementById("priVip").onclick = () => setPriority(2);
+document.getElementById("btnAddFood").onclick = () => {
+  if (!selectedFoodId) { toast(t("selectFood")); return; }
+  const f = foods.find(x => x.id === selectedFoodId);
+  if (!f) return;
+  const size = document.getElementById("size").value;
+  const qty = Math.max(1, parseInt(document.getElementById("qty").value || "1", 10));
+  const price = Number(f[sizePriceKey[size]] || 0);
+  const existing = cart.find(c => c.food_id === f.id && c.size === size);
+  if (existing) existing.qty += qty;
+  else cart.push({ food_id: f.id, name: f.name, size, qty, price });
+  document.getElementById("qty").value = 1;
+  renderCart();
+  toast(f.name + t("added"));
+};
+document.getElementById("btnClear").onclick = () => {
+  cart = []; editingOrderId = null;
+  document.getElementById("note").value = "";
+  document.getElementById("btnSubmit").textContent = t("submit");
+  renderCart();
+  checkOccupied();
+};
+document.getElementById("btnSubmit").onclick = async () => {
+  if (!cart.length) { toast(t("cartEmpty")); return; }
+  const tableNo = parseInt(document.getElementById("tableNo").value, 10);
+  // Proactive check: a brand-new order for a table that already has one
+  // open is redirected straight into editing that order instead of being
+  // sent at all — same rule the server enforces below, just caught early
+  // so the waiter isn't left staring at an error.
+  if (!editingOrderId && occupiedTables[tableNo]) {
+    toast(t("tableTaken"));
+    editOrder(occupiedTables[tableNo]);
+    return;
+  }
+  const payload = {
+    table_no: tableNo,
+    items: cart,
+    note: document.getElementById("note").value.trim(),
+    waiter_name: document.getElementById("waiterName").value.trim(),
+    order_type: orderType,
+    priority: orderPriority
+  };
+  try {
+    let res;
+    if (editingOrderId) {
+      res = await fetch("/api/orders/" + editingOrderId, {
+        method: "PUT", headers: authHeaders(true),
+        body: JSON.stringify(payload)
+      });
+    } else {
+      res = await fetch("/api/orders", {
+        method: "POST", headers: authHeaders(true),
+        body: JSON.stringify(payload)
+      });
+    }
+    const data = await res.json();
+    if (!data.ok) {
+      // 409 = another device took this table between our proactive check
+      // and this submit; fall back to editing that order instead of just
+      // failing, so the waiter's cart isn't lost for nothing.
+      if (res.status === 409 && data.existing_order_id) {
+        toast(t("tableTaken"));
+        loadOccupiedTables();
+        editOrder(data.existing_order_id);
+        return;
+      }
+      toast(data.error || "Error");
+      return;
+    }
+    toast(editingOrderId ? t("edited") : t("sent"));
+    cart = []; editingOrderId = null;
+    document.getElementById("note").value = "";
+    document.getElementById("btnSubmit").textContent = t("submit");
+    renderCart();
+    loadOccupiedTables();
+  } catch (e) { toast(t("noConn")); }
+};
+document.getElementById("tabNew").onclick = () => {
+  document.getElementById("tabNew").classList.add("active");
+  document.getElementById("tabList").classList.remove("active");
+  document.getElementById("panelNew").classList.remove("hidden");
+  document.getElementById("panelList").classList.add("hidden");
+  document.getElementById("footerNew").classList.remove("hidden");
+  checkOccupied();
+};
+document.getElementById("tabList").onclick = () => {
+  document.getElementById("tabList").classList.add("active");
+  document.getElementById("tabNew").classList.remove("active");
+  document.getElementById("panelList").classList.remove("hidden");
+  document.getElementById("panelNew").classList.add("hidden");
+  document.getElementById("footerNew").classList.add("hidden");
+  loadOrders();
+};
+function statusLabel(s) {
+  const map = { pending: "statusPending", preparing: "statusPreparing", ready: "statusReady",
+    delivered: "statusDelivered", paid: "statusPaid", cancelled: "statusCancelled" };
+  return t(map[s] || s);
+}
+async function loadOrders() {
+  const table = document.getElementById("filterTable").value;
+  let url = "/api/orders?status=pending,preparing,ready,delivered&limit=50";
+  if (table) url += "&table_no=" + table;
+  try {
+    const res = await fetch(url, { headers: authHeaders() });
+    const orders = await res.json();
+    const box = document.getElementById("ordersList");
+    if (!orders.length) {
+      box.innerHTML = `<p style="color:var(--muted);text-align:center;margin-top:20px;">${t("noOrders")}</p>`;
+      return;
+    }
+    box.innerHTML = orders.map(o => {
+      const items = (o.items || []).map(it => `${it.name} (${sizeLabel(it.size)}) ×${it.qty}`).join(" · ");
+      // Marking delivered and cancelling both live here, on the waiter's
+      // own tablet — the kitchen board is a cook-status display only and
+      // no longer has these actions, so this is the one place either can
+      // happen. "ready" orders get a delivered button front-and-center;
+      // any still-open order can be cancelled (e.g. the guest changed
+      // their mind) unless it's already delivered, at which point only
+      // settling the bill from the desktop accounting screen closes it out.
+      let actions = `<button class="btn" style="width:auto;padding:9px 16px;" onclick="editOrder(${o.id})">${t("edit")}</button>`;
+      if (o.status !== "delivered") {
+        actions += `<button class="btn" style="width:auto;padding:9px 16px;background:rgba(57,217,138,0.14);border-color:rgba(57,217,138,0.35);color:var(--ok);" onclick="markDelivered(${o.id})">${t("deliverBtn")}</button>`;
+      }
+      actions += `<button class="btn" style="width:auto;padding:9px 12px;background:rgba(255,92,92,0.12);border-color:rgba(255,92,92,0.3);color:var(--danger);" onclick="cancelOrder(${o.id})">${t("cancelBtn")}</button>`;
+      return `<div class="order-card"><div class="head"><strong>${t("tableN")}${o.table_no}</strong><span class="badge">${statusLabel(o.status)}</span></div><div style="font-size:12px;color:var(--muted);margin-bottom:10px;">${items}</div><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;"><span style="color:var(--accent);font-weight:800;font-size:16px;">${money(o.total)}</span><div style="display:flex;gap:6px;flex-wrap:wrap;">${actions}</div></div></div>`;
+    }).join("");
+  } catch (e) { toast(t("noConn")); }
+}
+window.markDelivered = async function(id) {
+  try {
+    const res = await fetch("/api/orders/" + id + "/status", {
+      method: "POST", headers: authHeaders(true), body: JSON.stringify({ status: "delivered" })
+    });
+    const data = await res.json();
+    if (!data.ok) { toast(data.error || t("actionFailed")); return; }
+    toast(t("delivered"));
+    loadOrders(); loadOccupiedTables();
+  } catch (e) { toast(t("noConn")); }
+};
+window.cancelOrder = async function(id) {
+  if (!confirm(t("cancelOrderConfirm"))) return;
+  try {
+    const res = await fetch("/api/orders/" + id + "/cancel", { method: "POST", headers: authHeaders() });
+    const data = await res.json();
+    if (!data.ok) { toast(data.error || t("actionFailed")); return; }
+    toast(t("cancelled"));
+    loadOrders(); loadOccupiedTables();
+  } catch (e) { toast(t("noConn")); }
+}
+window.editOrder = async function(id) {
+  try {
+    const res = await fetch("/api/orders?limit=100", { headers: authHeaders() });
+    const orders = await res.json();
+    const o = orders.find(x => x.id === id);
+    if (!o) return;
+    if (["paid", "cancelled"].includes(o.status)) { toast(t("notEditable")); return; }
+    editingOrderId = o.id;
+    cart = (o.items || []).map(it => ({ ...it }));
+    document.getElementById("tableNo").value = o.table_no;
+    document.getElementById("note").value = o.note || "";
+    document.getElementById("waiterName").value = o.waiter_name || "";
+    orderType = o.order_type || "dine_in";
+    if (orderType === "takeaway") document.getElementById("typeTake").click();
+    else document.getElementById("typeDine").click();
+    // Previously the priority buttons kept whatever value was last picked
+    // in the "new order" form instead of the order's real priority — so
+    // saving an edit on a VIP/rush ticket could silently reset it back to
+    // normal. Sync the on-screen selector to the order being edited.
+    setPriority(Number(o.priority) || 0);
+    document.getElementById("btnSubmit").textContent = t("saveEdit");
+    renderCart();
+    checkOccupied();
+    document.getElementById("tabNew").click();
+    toast(t("editing") + o.table_no);
+  } catch (e) { toast(t("noConn")); }
+};
+document.getElementById("btnRefreshList").onclick = loadOrders;
+document.getElementById("filterTable").onchange = loadOrders;
+document.getElementById("foodSearch").oninput = renderFoods;
+applyLang();
+trySavedKey();
+</script>
+</body>
+</html>

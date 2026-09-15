@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Runtime data
+data/eva_restaurant.db
+data/eva_restaurant.db-*
+data/settings.json
+data/logs/*
+!data/logs/.gitkeep
+data/food_images/*
+!data/food_images/.gitkeep
+
+# Tool caches
+.ruff_cache/
+.pytest_cache/
